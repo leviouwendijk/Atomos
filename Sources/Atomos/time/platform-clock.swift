@@ -63,6 +63,7 @@ internal enum _AtomosSystemClock {
 #endif
     }
 
+#if !canImport(Foundation)
     static func wallDate() -> Date {
 #if canImport(Darwin)
         var value = timeval()
@@ -118,6 +119,7 @@ internal enum _AtomosSystemClock {
         )
 #endif
     }
+#endif
 }
 
 #if canImport(Darwin)

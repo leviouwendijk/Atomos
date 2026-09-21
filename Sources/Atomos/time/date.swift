@@ -1,3 +1,8 @@
+#if canImport(Foundation)
+import Foundation
+
+public typealias Date = Foundation.Date
+#else
 public struct Date:
     Sendable,
     Hashable,
@@ -62,11 +67,7 @@ public struct Date:
     }
 
     public init() {
-#if canImport(Foundation)
-        self = _AtomosFoundationClock.wallDate()
-#else
         self = _AtomosSystemClock.wallDate()
-#endif
     }
 
     public static var now: Self {
@@ -103,3 +104,4 @@ public struct Date:
         return lhs.nanoseconds < rhs.nanoseconds
     }
 }
+#endif
