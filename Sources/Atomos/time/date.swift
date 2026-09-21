@@ -19,8 +19,54 @@ public struct Date:
         self.nanoseconds = nanoseconds
     }
 
+    public init(
+        timeIntervalSince1970: TimeInterval
+    ) {
+        precondition(
+            timeIntervalSince1970.isFinite
+        )
+
+        let wholeSeconds = timeIntervalSince1970.rounded(
+            .down
+        )
+
+        precondition(
+            wholeSeconds >= Double(Int64.min)
+                && wholeSeconds <= Double(Int64.max)
+        )
+
+        var seconds = Int64(wholeSeconds)
+        var nanoseconds = Int64(
+            (
+                (
+                    timeIntervalSince1970
+                        - wholeSeconds
+                ) * 1_000_000_000
+            ).rounded()
+        )
+
+        if nanoseconds >= 1_000_000_000 {
+            seconds += nanoseconds / 1_000_000_000
+            nanoseconds %= 1_000_000_000
+        }
+
+        precondition(
+            nanoseconds >= 0
+                && nanoseconds < 1_000_000_000
+        )
+
+        self.init(
+            secondsSinceUnixEpoch: seconds,
+            nanoseconds: UInt32(nanoseconds)
+        )
+    }
+
     public init() {
+#if canImport(Foundation)
+        self = _AtomosFoundationClock.wallDate()
+#else
         self = _AtomosSystemClock.wallDate()
+#endif
     }
 
     public static var now: Self {
