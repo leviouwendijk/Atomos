@@ -66,7 +66,7 @@ public struct MonotonicClock: Sendable {
         }
 
         public init(
-            seconds: TimeInterval
+            seconds: Double
         ) {
             self.nanoseconds = Int64(
                 (seconds * 1_000_000_000).rounded()

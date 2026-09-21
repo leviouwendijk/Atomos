@@ -11,7 +11,7 @@ import Musl
 #elseif canImport(WASILibc)
 import WASILibc
 #else
-#error("Atomos does not yet provide a clock backend for this platform")
+#error("Atomos does not yet provide a monotonic clock backend for this platform")
 #endif
 
 internal enum _AtomosSystemClock {
@@ -62,64 +62,6 @@ internal enum _AtomosSystemClock {
             + UInt64(value.tv_nsec)
 #endif
     }
-
-#if !canImport(Foundation)
-    static func wallDate() -> Date {
-#if canImport(Darwin)
-        var value = timeval()
-
-        precondition(
-            gettimeofday(
-                &value,
-                nil
-            ) == 0
-        )
-
-        return Date(
-            secondsSinceUnixEpoch: Int64(value.tv_sec),
-            nanoseconds: UInt32(value.tv_usec) * 1_000
-        )
-#elseif canImport(WinSDK)
-        var value = FILETIME()
-        GetSystemTimeAsFileTime(
-            &value
-        )
-
-        let ticks = UInt64(value.dwLowDateTime)
-            | UInt64(value.dwHighDateTime) << 32
-        let unixEpochOffset: UInt64 = 116_444_736_000_000_000
-
-        precondition(
-            ticks >= unixEpochOffset
-        )
-
-        let unixTicks = ticks - unixEpochOffset
-
-        return Date(
-            secondsSinceUnixEpoch: Int64(
-                unixTicks / 10_000_000
-            ),
-            nanoseconds: UInt32(
-                unixTicks % 10_000_000
-            ) * 100
-        )
-#else
-        var value = timespec()
-
-        precondition(
-            clock_gettime(
-                CLOCK_REALTIME,
-                &value
-            ) == 0
-        )
-
-        return Date(
-            secondsSinceUnixEpoch: Int64(value.tv_sec),
-            nanoseconds: UInt32(value.tv_nsec)
-        )
-#endif
-    }
-#endif
 }
 
 #if canImport(Darwin)

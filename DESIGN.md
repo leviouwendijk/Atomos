@@ -1,43 +1,37 @@
 # Atomos
 
-Atomos is the foundational platform-primitives package.
+Atomos is the foundational low-level primitives package.
 
 ## Boundary
 
 Atomos has no external package dependencies and declares no platform floor.
 
-Platform differences terminate inside Atomos. Higher-level packages consume portable Atomos vocabulary rather than depending directly on Darwin, Glibc, Musl, Bionic, WASI, WinSDK, or deployment-specific runtime APIs.
+Platform differences terminate inside Atomos. Higher-level packages consume portable Atomos primitives rather than depending directly on Darwin, Glibc, Musl, Bionic, WASI, WinSDK, or deployment-specific runtime APIs.
 
-## Foundation policy
+Atomos should own primitives when doing so materially improves deployment reach, semantic control, representation, or package layering.
 
-Foundation is not prohibited.
+It is not a goal to recreate or mirror Foundation indiscriminately.
 
-When `Foundation` can be imported and already provides the desired portable primitive semantics, Atomos may map its public vocabulary directly onto the corresponding Foundation type.
+## Time
 
-When Foundation is unavailable, Atomos may provide its own implementation of that primitive.
+Atomos currently owns monotonic elapsed-time primitives only.
 
-This allows higher-level libraries to use Atomos as a common low-level vocabulary without forcing needless wrapper types or Foundation-to-Atomos conversion at package boundaries.
+- `MonotonicClock`: platform-independent monotonic clock facade.
+- `MonotonicClock.Instant`: opaque instant in an arbitrary monotonic epoch.
+- `MonotonicClock.Duration`: signed nanosecond duration.
 
-A conditional Foundation mapping must not impose an Apple deployment floor on Atomos consumers.
+The monotonic backend is implemented directly with native platform clocks so it does not inherit availability constraints from higher-level clock APIs.
 
-## Initial primitives
+Wall-clock and civil-time concepts such as `Date` remain outside Atomos for now. Higher-level libraries may use Foundation directly where Foundation provides the desired portable semantics.
 
-- `Date`: aliases `Foundation.Date` whenever Foundation is available. When Foundation is unavailable, Atomos provides a compatible wall-clock value based on seconds and nanoseconds since the Unix epoch.
-- `TimeInterval`: aliases `Foundation.TimeInterval` whenever Foundation is available and falls back to `Double` otherwise.
-- `MonotonicClock`: remains Atomos-owned on every platform. It is backed directly by the native platform monotonic clock so it does not inherit deployment availability from higher-level Swift clock APIs.
-- `MonotonicClock.Instant`: opaque monotonic instant owned by Atomos.
-- `MonotonicClock.Duration`: signed nanosecond duration owned by Atomos.
+## Foundation interoperability
 
-## Ownership rule
+Atomos may add `#if canImport(Foundation)` extensions in the future when a concrete interoperability need exists.
 
-Types whose semantics and type identity are already suitable may be aliases when the providing module exists.
+Such extensions should bridge an Atomos-owned primitive to Foundation without changing the primitive's core meaning, representation, or availability.
 
-Types where Atomos needs stronger deployment reach, representation control, or semantics remain Atomos-owned regardless of Foundation availability.
-
-`MonotonicClock` is intentionally in the latter category because its purpose is to provide a stable monotonic timing primitive without a higher platform floor.
+There is intentionally no conversion between a wall-clock timestamp and `MonotonicClock.Instant`: a monotonic instant has an arbitrary epoch and is only meaningful for ordering and elapsed-time measurement within that clock domain.
 
 ## Growth rule
 
-Atomos should grow when a broadly reusable primitive improves deployment reach, semantic control, interoperability, or package layering.
-
-It is not a goal to recreate Foundation indiscriminately.
+Add primitives to Atomos when ownership is useful in itself, not merely to replace an existing Foundation spelling.
