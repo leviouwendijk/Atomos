@@ -19,8 +19,9 @@ Atomos currently owns monotonic elapsed-time primitives only.
 - `MonotonicClock`: platform-independent monotonic clock facade.
 - `MonotonicClock.Instant`: opaque instant in an arbitrary monotonic epoch.
 - `MonotonicClock.Duration`: signed nanosecond duration.
+- `MonotonicClock.sleep(for:)`: blocking relative sleep using the native platform sleep primitive.
 
-The monotonic backend is implemented directly with native platform clocks so it does not inherit availability constraints from higher-level clock APIs.
+The monotonic timing and sleep backends are implemented directly with native platform primitives so they do not inherit availability constraints from higher-level clock or concurrency APIs.
 
 Wall-clock and civil-time concepts such as `Date` remain outside Atomos for now. Higher-level libraries may use Foundation directly where Foundation provides the desired portable semantics.
 
