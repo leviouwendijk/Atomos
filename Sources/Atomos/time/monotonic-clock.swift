@@ -65,11 +65,33 @@ public struct MonotonicClock: Sendable {
             self.nanoseconds = nanoseconds
         }
 
+        /// Builds a duration from floating-point seconds without trapping.
+        ///
+        /// Finite values are rounded to the nearest nanosecond. Values outside
+        /// the representable range saturate. Infinity saturates toward its sign;
+        /// NaN normalizes to zero.
         public init(
             seconds: Double
         ) {
+            guard !seconds.isNaN else {
+                self.nanoseconds = 0
+                return
+            }
+
+            let scaled = seconds * 1_000_000_000
+
+            if scaled >= Double(Int64.max) {
+                self.nanoseconds = .max
+                return
+            }
+
+            if scaled <= Double(Int64.min) {
+                self.nanoseconds = .min
+                return
+            }
+
             self.nanoseconds = Int64(
-                (seconds * 1_000_000_000).rounded()
+                scaled.rounded()
             )
         }
 
@@ -100,23 +122,39 @@ public struct MonotonicClock: Sendable {
             lhs.nanoseconds < rhs.nanoseconds
         }
 
+        /// Saturating addition.
         public static func + (
             lhs: Self,
             rhs: Self
         ) -> Self {
-            .init(
-                nanoseconds: lhs.nanoseconds
-                    + rhs.nanoseconds
+            let (value, overflow) = lhs.nanoseconds.addingReportingOverflow(
+                rhs.nanoseconds
+            )
+
+            guard overflow else {
+                return .init(nanoseconds: value)
+            }
+
+            return .init(
+                nanoseconds: lhs.nanoseconds >= 0 ? .max : .min
             )
         }
 
+        /// Saturating subtraction.
         public static func - (
             lhs: Self,
             rhs: Self
         ) -> Self {
-            .init(
-                nanoseconds: lhs.nanoseconds
-                    - rhs.nanoseconds
+            let (value, overflow) = lhs.nanoseconds.subtractingReportingOverflow(
+                rhs.nanoseconds
+            )
+
+            guard overflow else {
+                return .init(nanoseconds: value)
+            }
+
+            return .init(
+                nanoseconds: rhs.nanoseconds < 0 ? .max : .min
             )
         }
     }

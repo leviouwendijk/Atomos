@@ -9,10 +9,19 @@ let package = Package(
             name: "Atomos",
             targets: ["Atomos"]
         ),
+        .executable(
+            name: "t_at_time",
+            targets: ["t_at_time"]
+        ),
     ],
     targets: [
         .target(
             name: "Atomos"
+        ),
+        .executableTarget(
+            name: "t_at_time",
+            dependencies: ["Atomos"],
+            path: "Testing/t_at_time"
         ),
     ],
     swiftLanguageModes: [.v6]
