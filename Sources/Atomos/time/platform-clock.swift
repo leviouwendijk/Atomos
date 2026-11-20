@@ -64,6 +64,34 @@ internal enum _AtomosSystemClock {
     }
 }
 
+extension _AtomosSystemClock {
+    /// Nanoseconds since 1970-01-01T00:00:00Z from the realtime clock.
+    static func realtimeNanoseconds() -> Int64 {
+#if canImport(WinSDK)
+        var file = FILETIME()
+        GetSystemTimePreciseAsFileTime(&file)
+
+        // 100-nanosecond intervals since 1601-01-01.
+        let intervals = Int64(file.dwHighDateTime) << 32
+            | Int64(file.dwLowDateTime)
+
+        return (intervals - 116_444_736_000_000_000) * 100
+#else
+        var value = timespec()
+
+        precondition(
+            clock_gettime(
+                CLOCK_REALTIME,
+                &value
+            ) == 0
+        )
+
+        return Int64(value.tv_sec) * 1_000_000_000
+            + Int64(value.tv_nsec)
+#endif
+    }
+}
+
 #if canImport(Darwin)
 private let darwinTimebase: mach_timebase_info_data_t = {
     var value = mach_timebase_info_data_t()
