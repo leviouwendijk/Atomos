@@ -19,17 +19,45 @@ public struct WallClock: Sendable {
             self.nanosecondsSinceUnixEpoch = nanosecondsSinceUnixEpoch
         }
 
-        /// Rounds to the nearest nanosecond and saturates like `MonotonicClock.Duration(seconds:)`.
+        /// Rounds to the nearest nanosecond; saturates out of range, NaN becomes the epoch.
+        /// Whole and fractional seconds convert apart: scaling a present-day time by 1e9 as
+        /// one Double would lose its last ~100 ns to the 53-bit mantissa.
         public init(
             secondsSinceUnixEpoch seconds: Double
         ) {
-            self.nanosecondsSinceUnixEpoch = MonotonicClock.Duration(
-                seconds: seconds
-            ).nanoseconds
+            let limit = Double(Int64.max) / 1_000_000_000
+
+            guard !seconds.isNaN else {
+                self.nanosecondsSinceUnixEpoch = 0
+                return
+            }
+
+            guard seconds < limit else {
+                self.nanosecondsSinceUnixEpoch = .max
+                return
+            }
+
+            guard seconds > -limit else {
+                self.nanosecondsSinceUnixEpoch = .min
+                return
+            }
+
+            let whole = seconds.rounded(.towardZero)
+            let fraction = Int64(
+                ((seconds - whole) * 1_000_000_000).rounded()
+            )
+            let (value, overflow) = (Int64(whole) * 1_000_000_000)
+                .addingReportingOverflow(fraction)
+
+            self.nanosecondsSinceUnixEpoch = overflow
+                ? (fraction > 0 ? .max : .min)
+                : value
         }
 
+        /// Whole and fractional seconds convert apart, as in `init(secondsSinceUnixEpoch:)`.
         public var secondsSinceUnixEpoch: Double {
-            Double(nanosecondsSinceUnixEpoch) / 1_000_000_000
+            Double(nanosecondsSinceUnixEpoch / 1_000_000_000)
+                + Double(nanosecondsSinceUnixEpoch % 1_000_000_000) / 1_000_000_000
         }
 
         /// Negative when `other` is earlier. Saturates.

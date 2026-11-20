@@ -87,10 +87,42 @@ require(
     "an injected clock reads its closure"
 )
 
+let present = WallClock.Instant(nanosecondsSinceUnixEpoch: 1_700_000_000_123_456_789)
+
+require(
+    WallClock.Instant(secondsSinceUnixEpoch: 1_700_000_000.25).nanosecondsSinceUnixEpoch
+        == 1_700_000_000_250_000_000,
+    "present-day seconds convert without losing nanoseconds"
+)
+require(
+    abs(
+        WallClock.Instant(secondsSinceUnixEpoch: present.secondsSinceUnixEpoch)
+            .nanosecondsSinceUnixEpoch - present.nanosecondsSinceUnixEpoch
+    ) < 1_000,
+    "a present-day instant survives seconds within a microsecond"
+)
+require(
+    WallClock.Instant(secondsSinceUnixEpoch: -1.5).nanosecondsSinceUnixEpoch == -1_500_000_000
+        && WallClock.Instant(nanosecondsSinceUnixEpoch: -1_500_000_000).secondsSinceUnixEpoch == -1.5,
+    "times before 1970 convert both ways"
+)
+require(
+    WallClock.Instant(secondsSinceUnixEpoch: .infinity).nanosecondsSinceUnixEpoch == .max
+        && WallClock.Instant(secondsSinceUnixEpoch: -.infinity).nanosecondsSinceUnixEpoch == .min
+        && WallClock.Instant(secondsSinceUnixEpoch: .nan).nanosecondsSinceUnixEpoch == 0,
+    "out-of-range seconds saturate, NaN is the epoch"
+)
+
+require(
+    WallClock.Instant(secondsSinceUnixEpoch: -9_223_372_036.5).nanosecondsSinceUnixEpoch
+        == -9_223_372_036_500_000_000,
+    "seconds near the negative limit convert without trapping"
+)
+
 let system = WallClock.system.now
 require(
     system.secondsSinceUnixEpoch > 1_700_000_000,
     "the system clock reads the current time"
 )
 
-print("tatomos_time: 18/18 passed")
+print("tatomos_time: 23/23 passed")
