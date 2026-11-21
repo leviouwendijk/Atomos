@@ -1,3 +1,11 @@
+/// Measures how long work took: never runs backwards, unaffected by setting the time.
+///
+/// It pauses while the machine sleeps (Darwin `mach_absolute_time`, Linux
+/// `CLOCK_MONOTONIC`), like Swift's `SuspendingClock`, so a benchmark doesn't count a
+/// closed lid. That makes it wrong for deadlines in real time, such as "an hour from
+/// now": use `WallClock` for those, or Swift's `ContinuousClock`, which keeps counting
+/// through sleep. Windows reads `QueryPerformanceCounter`, whose behaviour during sleep
+/// is unverified and may differ from the other platforms.
 public struct MonotonicClock: Sendable {
     public struct Instant:
         Sendable,
